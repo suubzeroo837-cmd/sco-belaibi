@@ -1,0 +1,381 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCO BELAIBI</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#f8d99b, #e9a65e);
+    color: #58351e;
+    text-align: center;
+    min-height: 100vh;
+    padding: 25px 15px;
+    position: relative;
+    isolation: isolate;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 42vh;
+    background: #c17d49;
+    clip-path: polygon(
+        0 65%, 15% 20%, 30% 65%,
+        48% 10%, 68% 70%, 85% 25%,
+        100% 65%, 100% 100%, 0 100%
+    );
+    z-index: -1;
+    pointer-events: none;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28vh;
+    background: #96552f;
+    clip-path: polygon(
+        0 45%, 20% 5%, 40% 65%,
+        65% 15%, 82% 60%, 100% 25%,
+        100% 100%, 0 100%
+    );
+    z-index: -1;
+    pointer-events: none;
+}
+
+
+.container {
+    max-width: 450px;
+    margin: 35px auto;
+    padding: 25px 18px;
+    background: #fff1d6;
+    border-radius: 20px;
+    box-shadow: 0 8px 20px #75432455;
+}
+
+h1 {
+    color: #a64b1d;
+    font-size: 32px;
+}
+
+button {
+    background: #b85c25;
+    color: white;
+    border: none;
+    padding: 13px 25px;
+    border-radius: 12px;
+    font-size: 18px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+input {
+    width: 85%;
+    padding: 13px;
+    border: 2px solid #c58b52;
+    border-radius: 10px;
+    font-size: 20px;
+    text-align: center;
+}
+
+#game {
+    display: none;
+}
+
+#message {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+#result {
+    display: none;
+    font-size: 21px;
+    font-weight: bold;
+    margin: 20px 0;
+}
+
+#restart {
+    display: none;
+}
+
+.progress-area {
+    margin: 20px 0;
+}
+
+.progress-track {
+    background: #dfc9a9;
+    height: 16px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+#progressBar {
+    width: 0%;
+    height: 100%;
+    background: #398b43;
+    transition: width 0.4s;
+}
+
+#progressText {
+    font-weight: bold;
+    margin: 8px;
+}
+
+footer {
+    margin-top: 25px;
+    font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🏜️ SCO BELAIBI</h1>
+
+    <div id="home">
+        <h2>مرحبا بك في التحدي! 🎮</h2>
+        <p>خمّن الرقم السري بين 1 و100</p>
+        <p>عندك 5 محاولات فقط!</p>
+        <button onclick="startGame()">ابدأ اللعب 🚀</button>
+    </div>
+
+    <div id="game">
+
+        <h2>اكتشف الرقم السري 🔢</h2>
+
+        <input
+            type="number"
+            id="guess"
+            min="1"
+            max="100"
+            placeholder="أدخل رقمك"
+        >
+
+        <br>
+
+        <button onclick="checkGuess()">تحقق</button>
+
+        <p id="message"></p>
+
+        <p id="attempts">المحاولات المتبقية: 5</p>
+
+        <div class="progress-area">
+            <p>📊 نسبة الاقتراب</p>
+
+            <div class="progress-track">
+                <div id="progressBar"></div>
+            </div>
+
+            <p id="progressText">0%</p>
+        </div>
+
+        <div id="result"></div>
+
+        <button id="restart" onclick="startGame()">
+            العب مرة أخرى 🔄
+        </button>
+
+    </div>
+
+    <footer>© SCO BELAIBI</footer>
+
+</div>
+
+<script>
+let secretNumber;
+let remaining = 5;
+let finished = false;
+
+const wins = [
+    "ربحت معانا رحلة للمالديف! 🎉🎊",
+    "صحيت! ضرك روح ترقد 😂",
+    "ربحت 1000! بصح ماعنديش الصرف 😂"
+];
+
+const losses = [
+    "زير روحك شوي! 😐",
+    "راسك خاوي، خدمو شوي! 😒",
+    "أخرج منا ماتزيدش ترجع! 😡"
+];
+
+function updatePercentage(difference) {
+    let percent;
+
+    if (difference === 0) percent = 100;
+    else if (difference <= 3) percent = 95;
+    else if (difference <= 8) percent = 80;
+    else if (difference <= 15) percent = 60;
+    else if (difference <= 29) percent = 40;
+    else if (difference <= 50) percent = 20;
+    else percent = 0;
+
+    document.getElementById("progressBar").style.width =
+        percent + "%";
+
+    document.getElementById("progressText").textContent =
+        percent + "%";
+}
+
+function startGame() {
+    secretNumber = Math.floor(Math.random() * 100) + 1;
+    remaining = 5;
+    finished = false;
+
+    document.getElementById("home").style.display = "none";
+    document.getElementById("game").style.display = "block";
+
+    document.getElementById("guess").disabled = false;
+    document.getElementById("guess").value = "";
+
+    document.getElementById("message").textContent = "";
+    document.getElementById("result").style.display = "none";
+    document.getElementById("restart").style.display = "none";
+
+    document.getElementById("attempts").textContent =
+        "المحاولات المتبقية: 5";
+
+    updatePercentage(1000);
+}
+
+function checkGuess() {
+    if (finished) return;
+
+    const input = document.getElementById("guess");
+    const number = Number(input.value);
+    const message = document.getElementById("message");
+
+    if (
+        input.value === "" ||
+        !Number.isInteger(number) ||
+        number < 1 ||
+        number > 100
+    ) {
+        message.style.color = "red";
+        message.textContent = "أدخل رقماً من 1 إلى 100!";
+        return;
+    }
+
+    remaining--;
+
+    if (number === secretNumber) {
+        updatePercentage(0);
+        message.style.color = "green";
+        message.textContent = "🎉 مبروك! لقيت الرقم الصحيح!";
+
+        document.getElementById("attempts").textContent =
+            "المحاولات المتبقية: " + remaining;
+
+        endGame(true);
+        return;
+    }
+
+    const difference = Math.abs(secretNumber - number);
+    updatePercentage(difference);
+
+    let hint = "";
+
+if (difference === 1) {
+    hint = "😨 حطها فالقول يا رياض!";
+}
+else if (difference <= 3) {
+    hint = "🔥 راك قريب بزاف!";
+}
+else if (difference <= 8) {
+    hint = "😍 قربت!";
+}
+else if (difference <= 15) {
+    hint = "👀 راك في الطريق الصحيح!";
+}
+else if (difference <= 30) {
+    hint = "😅 مازال شوية!";
+}
+else {
+    hint = "😂 راك فالتش!";
+}
+
+    if (number < secretNumber) {
+        message.style.color = "green";
+        message.textContent = "⬆️ أطلع! " + hint;
+    } else {
+        message.style.color = "red";
+        message.textContent = "⬇️ أهبط! " + hint;
+    }
+
+    document.getElementById("attempts").textContent =
+        "المحاولات المتبقية: " + remaining;
+
+    input.value = "";
+
+    if (remaining === 0) {
+        endGame(false);
+    }
+}
+function openChest() {
+    const prizes = [
+        "راك تسالني قهوة! ☕",
+        "راك معروض في عرسي! 😻",
+        "الزهر مكانش، سمحلنا لعزيز! 😪",
+        "ربحت دعوة! الله يفتح عليك بيبان الخير 🤲🏼",
+        "ربحت 100Go! هه نقصر برك! 🤠"
+    ];
+
+    const prize = prizes[
+        Math.floor(Math.random() * prizes.length)
+    ];
+
+    document.getElementById("chestPrize").textContent = prize;
+}
+
+
+function endGame(won) {
+    finished = true;
+
+    document.getElementById("guess").disabled = true;
+
+    const result = document.getElementById("result");
+    result.style.display = "block";
+
+    if (won) {
+        const oldMessage =
+            wins[Math.floor(Math.random() * wins.length)];
+
+        result.innerHTML = `
+            🎉 ${oldMessage}
+            <br><br>
+            <button onclick="openChest()">
+                🎁 افتح صندوق المفاجآت
+            </button>
+            <p id="chestPrize"></p>
+        `;
+    } else {
+        result.textContent =
+            losses[Math.floor(Math.random() * losses.length)] +
+            " الرقم الصحيح هو: " + secretNumber;
+    }
+
+    document.getElementById("restart").style.display = "inline-block";
+}
+
+
+
+</script>
+
+</body>
+</html>
